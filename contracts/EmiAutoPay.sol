@@ -14,34 +14,38 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  - Sender deposits remaining amount into this contract
  - Chainlink Automation triggers scheduled EMI payments
  - Payments stop automatically when total target is reached
+ - Sender network recorded for cross-chain readiness
 -----------------------------------------------------------
 */
 
 contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
-    
     // --------------------------------------
-    // EVENTS (Frontend will use these)
+    // EVENTS
     // --------------------------------------
-
     event EmiPlanCreated(
         address indexed sender,
         address indexed receiver,
+        string senderNetwork,
         uint256 emiAmount,
         uint256 interval,
         uint256 totalAmount
     );
 
     event DepositMade(address indexed sender, uint256 amount);
-    event EmiPaid(address indexed receiver, uint256 amount, uint256 nextPaymentTime);
+    event EmiPaid(
+        address indexed receiver,
+        uint256 amount,
+        uint256 nextPaymentTime
+    );
     event EmiCompleted(address indexed receiver);
     event EmergencyWithdraw(address indexed owner, uint256 amount);
 
     // --------------------------------------
     // STRUCTS & STORAGE
     // --------------------------------------
-
     struct EmiPlan {
         address sender;
+        string senderNetwork; // NEW FIELD
         address receiver;
         uint256 emiAmount;
         uint256 interval;
@@ -56,9 +60,9 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
     // --------------------------------------
     // CREATE EMI PLAN (Receiver sets EMI plan)
     // --------------------------------------
-
     function createEmiPlan(
         address _sender,
+        string memory _senderNetwork,
         uint256 _emiAmount,
         uint256 _interval,
         uint256 _totalAmount
@@ -70,6 +74,7 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
 
         plan = EmiPlan({
             sender: _sender,
+            senderNetwork: _senderNetwork,
             receiver: msg.sender,
             emiAmount: _emiAmount,
             interval: _interval,
@@ -79,13 +84,19 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
             isActive: true
         });
 
-        emit EmiPlanCreated(_sender, msg.sender, _emiAmount, _interval, _totalAmount);
+        emit EmiPlanCreated(
+            _sender,
+            msg.sender,
+            _senderNetwork,
+            _emiAmount,
+            _interval,
+            _totalAmount
+        );
     }
 
     // --------------------------------------
     // SENDER DEPOSITS FUNDS INTO CONTRACT
     // --------------------------------------
-
     function depositFunds() external payable nonReentrant {
         require(plan.isActive, "Plan not active");
         require(msg.sender == plan.sender, "Only sender can deposit");
@@ -96,13 +107,9 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
     // --------------------------------------
     // CHAINLINK AUTOMATION - CHECKUPKEEP
     // --------------------------------------
-
-    function checkUpkeep(bytes calldata) 
-        external 
-        view 
-        override 
-        returns (bool upkeepNeeded, bytes memory) 
-    {
+    function checkUpkeep(
+        bytes calldata
+    ) external view override returns (bool upkeepNeeded, bytes memory) {
         upkeepNeeded =
             plan.isActive &&
             address(this).balance >= plan.emiAmount &&
@@ -114,12 +121,7 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
     // --------------------------------------
     // CHAINLINK AUTOMATION - PERFORMUPKEEP
     // --------------------------------------
-
-    function performUpkeep(bytes calldata) 
-        external 
-        override 
-        nonReentrant 
-    {
+    function performUpkeep(bytes calldata) external override nonReentrant {
         if (
             plan.isActive &&
             address(this).balance >= plan.emiAmount &&
@@ -142,7 +144,6 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
     // --------------------------------------
     // EMERGENCY WITHDRAW (Owner Only)
     // --------------------------------------
-
     function emergencyWithdraw(uint256 amount) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
         payable(owner()).transfer(amount);
@@ -152,7 +153,6 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
     // --------------------------------------
     // PUBLIC VIEW FUNCTIONS
     // --------------------------------------
-
     function getContractBalance() external view returns (uint256) {
         return address(this).balance;
     }
