@@ -97,11 +97,21 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
     // --------------------------------------
     // SENDER DEPOSITS FUNDS INTO CONTRACT
     // --------------------------------------
+
+    // Mapping to track deposits per sender
+    mapping(address => uint256) public senderDeposits;
+
     function depositFunds() external payable nonReentrant {
         require(plan.isActive, "Plan not active");
         require(msg.sender == plan.sender, "Only sender can deposit");
+        senderDeposits[msg.sender] += msg.value; // Track sender's total deposit
 
         emit DepositMade(msg.sender, msg.value);
+    }
+
+    // Add a getter to fetch sender deposit
+    function getSenderDeposit(address _sender) external view returns (uint256) {
+        return senderDeposits[_sender];
     }
 
     // --------------------------------------

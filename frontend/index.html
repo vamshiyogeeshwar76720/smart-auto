@@ -13,18 +13,19 @@
 
     <div id="wallet">
         <button id="connectWalletBtn">Connect Wallet</button>
+        <button id="disconnectWalletBtn">Disconnect Wallet</button>
         <p id="account"></p>
         <p id="network"></p>
     </div>
 
     <hr>
-
-    <p id="senderNetwork"></p>
+    <!-- 
+    <p id="senderNetwork"></p> -->
 
 
     <div id="createPlan">
         <h2>Create EMI Plan</h2>
-        <input id="sender" placeholder="Sender Address">
+        <!-- <input id="sender" placeholder="Sender Address"> -->
         <input id="emiAmount" placeholder="EMI Amount (ETH)">
         <select id="intervalSelect">
             <option value="3600">1 Hour</option>
@@ -34,10 +35,16 @@
             <option value="86400">Daily</option>
             <option value="604800">Weekly</option>
             <option value="2592000">Monthly</option>
+            <option value="custom">Custom (minutes)</option>
         </select>
 
+
+        <input id="customInterval" placeholder="Enter custom minutes" style="display:none">
         <input id="totalAmount" placeholder="Total Amount (ETH)">
         <button id="createPlanBtn">Create EMI Plan</button>
+
+        <h3>QR Code for Sender</h3>
+        <div id="qrCode"></div>
     </div>
 
     <hr>
@@ -57,11 +64,11 @@
     </div>
 
     <hr>
-    
+
     <div id="planDetails">
         <h2>Active EMI Plan Details</h2>
         <button id="loadPlanBtn">Load EMI Plan</button>
-    
+
         <p><b>Sender:</b> <span id="planSender"></span></p>
         <p><b>Receiver:</b> <span id="planReceiver"></span></p>
         <p><b>EMI Amount:</b> <span id="planEmiAmount"></span></p>
@@ -74,6 +81,14 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <!-- WalletConnect Provider -->
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.7.0/dist/index.umd.min.js"></script>
+
+    <!-- Web3Modal Standalone -->
+    <script src="https://cdn.jsdelivr.net/npm/@web3modal/standalone@2.4.1/dist/index.umd.js"></script>
+
+
+
     <script src="abi.js"></script>
     <script src="app.js"></script>
 

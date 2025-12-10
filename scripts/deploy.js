@@ -56,8 +56,8 @@ async function main() {
   const networkName = hre.network.name;
 
   let rpcUrl;
-
-  if (networkName === "ethereum") rpcUrl = process.env.ETH_RPC_URL;
+  if (networkName === "sepolia") rpcUrl = process.env.SEPOLIA_RPC_URL;
+  else if (networkName === "ethereum") rpcUrl = process.env.ETH_RPC_URL;
   else if (networkName === "bsc") rpcUrl = process.env.BSC_RPC_URL;
   else if (networkName === "polygon") rpcUrl = process.env.POLYGON_RPC_URL;
   else throw new Error(`Unknown network: ${networkName}`);
