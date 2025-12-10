@@ -4,34 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMI AutoPay DApp</title>
+    <title>EMI AutoPay - Receiver Panel</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script src="abi.js"></script>
+    <script src="receiver.js" defer></script>
 </head>
 
 <body>
-    <h1>EMI AutoPay DApp</h1>
+
+    <h1>Receiver – Create EMI Plan</h1>
 
     <div id="wallet">
         <button id="connectWalletBtn">Connect Wallet</button>
-        <button id="disconnectWalletBtn">Disconnect Wallet</button>
         <p id="account"></p>
         <p id="network"></p>
     </div>
 
     <hr>
-    <!-- 
-    <p id="senderNetwork"></p> -->
-
 
     <div id="createPlan">
-        <h2>Create EMI Plan</h2>
-        <!-- <input id="sender" placeholder="Sender Address"> -->
+        <h2>Enter EMI Details</h2>
 
-        <!-- <input id="receiverAddress" placeholder="Receiver Address (ETH)" type="text"> -->
+        <input id="receiverAddress" placeholder="Receiver Address (0x...)" type="text">
 
+        <input id="emiAmount" placeholder="EMI Amount (ETH)" type="text">
 
-
-        <input id="emiAmount" placeholder="EMI Amount (ETH)">
         <select id="intervalSelect">
             <option value="3600">1 Hour</option>
             <option value="10800">3 Hours</option>
@@ -43,66 +45,19 @@
             <option value="custom">Custom (minutes)</option>
         </select>
 
+        <input id="customInterval" placeholder="Custom minutes" style="display:none">
 
-        <input id="customInterval" placeholder="Enter custom minutes" style="display:none">
-        <input id="totalAmount" placeholder="Total Amount (ETH)">
-        <input id="networkName" placeholder="Connected Network" type="text" disabled>
-        <button id="createPlanBtn">Create EMI Plan</button>
+        <input id="totalAmount" placeholder="Total Amount (ETH)" type="text">
 
-        <h3>QR Code for Sender</h3>
+        <button id="createPlanBtn">Generate QR</button>
+
+        <h3>Share this QR to Sender</h3>
         <div id="qrCode"></div>
     </div>
 
     <hr>
 
-    <div id="deposit">
-        <h2>Deposit Funds</h2>
-        <input id="depositAmount" placeholder="Amount to deposit (ETH)">
-        <button id="depositBtn">Deposit</button>
-    </div>
-
-    <hr>
-
-    <div id="balance">
-        <h2>Contract Balance</h2>
-        <button id="checkBalanceBtn">Check Balance</button>
-        <p id="contractBalance">0 ETH</p>
-    </div>
-
-    <hr>
-
-    <div id="planDetails">
-        <h2>Active EMI Plan Details</h2>
-        <button id="loadPlanBtn">Load EMI Plan</button>
-
-        <p><b>Sender:</b> <span id="planSender"></span></p>
-        <p><b>Receiver:</b> <span id="planReceiver"></span></p>
-        <p><b>EMI Amount:</b> <span id="planEmiAmount"></span></p>
-        <p><b>Interval:</b> <span id="planInterval"></span></p>
-        <p><b>Total Amount:</b> <span id="planTotalAmount"></span></p>
-        <p><b>Paid:</b> <span id="planPaid"></span></p>
-        <p><b>Next Payment:</b> <span id="planNextPayment"></span></p>
-        <p><b>Sender Network:</b> <span id="planSenderNetwork"></span></p>
-        <p><b>Status:</b> <span id="planStatus"></span></p>
-    </div>
-
-    <button onclick="window.location.href='wallets.html'">
-        Connected Wallets
-    </button>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <!-- WalletConnect Provider -->
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.7.0/dist/index.umd.min.js"></script>
-
-    <!-- Web3Modal Standalone -->
-    <script src="https://cdn.jsdelivr.net/npm/@web3modal/standalone@2.4.1/dist/index.umd.js"></script>
-
-
-
-    <script src="abi.js"></script>
-    <script src="app.js"></script>
-
+    <button onclick="window.location.href='wallets.html'">Connected Wallets</button>
 
 </body>
 

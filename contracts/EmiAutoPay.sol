@@ -5,27 +5,10 @@ import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatible
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/*
------------------------------------------------------------
- FULL PRODUCTION-GRADE EMI AUTOPAY SMART CONTRACT
------------------------------------------------------------
- - Sender sends first payment OFF-CHAIN (wallet → receiver)
- - Receiver sets EMI plan: interval, EMI amount, total amount
- - Sender deposits remaining amount into this contract
- - Chainlink Automation triggers scheduled EMI payments
- - Payments stop automatically when total target is reached
- - Sender network recorded for cross-chain readiness
------------------------------------------------------------
-*/
-
 contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
-    // --------------------------------------
-    // EVENTS
-    // --------------------------------------
     event EmiPlanCreated(
         address indexed sender,
         address indexed receiver,
-        string senderNetwork,
         uint256 emiAmount,
         uint256 interval,
         uint256 totalAmount
@@ -38,14 +21,9 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
         uint256 nextPaymentTime
     );
     event EmiCompleted(address indexed receiver);
-    event EmergencyWithdraw(address indexed owner, uint256 amount);
 
-    // --------------------------------------
-    // STRUCTS & STORAGE
-    // --------------------------------------
     struct EmiPlan {
         address sender;
-        string senderNetwork; // NEW FIELD
         address receiver;
         uint256 emiAmount;
         uint256 interval;
@@ -57,87 +35,81 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
 
     EmiPlan public plan;
 
-    // --------------------------------------
-    // CREATE EMI PLAN (Receiver sets EMI plan)
-    // --------------------------------------
+    mapping(address => uint256) public senderDeposits;
+
+    // ------------------------------
+    // SENDER CREATES EMI PLAN
+    // ------------------------------
     function createEmiPlan(
-        address _sender,
-        string memory _senderNetwork,
-        uint256 _emiAmount,
-        uint256 _interval,
-        uint256 _totalAmount
+        address receiver,
+        uint256 emiAmount,
+        uint256 interval,
+        uint256 totalAmount
     ) external {
-        require(_sender != address(0), "Invalid sender");
-        require(_emiAmount > 0, "EMI amount must be > 0");
-        require(_interval >= 60, "Interval must be >= 60 seconds");
-        require(_totalAmount > _emiAmount, "Total must be > EMI amount");
+        require(receiver != address(0), "Invalid receiver");
+        require(emiAmount > 0, "Invalid EMI");
+        require(totalAmount > emiAmount, "Total < EMI");
+        require(interval >= 60, "Interval too small");
 
         plan = EmiPlan({
-            sender: _sender,
-            senderNetwork: _senderNetwork,
-            receiver: msg.sender,
-            emiAmount: _emiAmount,
-            interval: _interval,
-            totalAmount: _totalAmount,
+            sender: msg.sender,
+            receiver: receiver,
+            emiAmount: emiAmount,
+            interval: interval,
+            totalAmount: totalAmount,
             amountPaid: 0,
-            nextPaymentTime: block.timestamp + _interval,
+            nextPaymentTime: block.timestamp + interval,
             isActive: true
         });
 
         emit EmiPlanCreated(
-            _sender,
             msg.sender,
-            _senderNetwork,
-            _emiAmount,
-            _interval,
-            _totalAmount
+            receiver,
+            emiAmount,
+            interval,
+            totalAmount
         );
     }
 
-    // --------------------------------------
-    // SENDER DEPOSITS FUNDS INTO CONTRACT
-    // --------------------------------------
-
-    // Mapping to track deposits per sender
-    mapping(address => uint256) public senderDeposits;
-
+    // ------------------------------
+    // SENDER DEPOSITS FUNDS
+    // ------------------------------
     function depositFunds() external payable nonReentrant {
-        require(plan.isActive, "Plan not active");
-        require(msg.sender == plan.sender, "Only sender can deposit");
-        senderDeposits[msg.sender] += msg.value; // Track sender's total deposit
+        require(plan.isActive, "No active plan");
+        require(msg.sender == plan.sender, "Not EMI sender");
 
+        senderDeposits[msg.sender] += msg.value;
         emit DepositMade(msg.sender, msg.value);
     }
 
-    // Add a getter to fetch sender deposit
-    function getSenderDeposit(address _sender) external view returns (uint256) {
-        return senderDeposits[_sender];
+    function getSenderDeposit(address s) external view returns (uint256) {
+        return senderDeposits[s];
     }
 
-    // --------------------------------------
-    // CHAINLINK AUTOMATION - CHECKUPKEEP
-    // --------------------------------------
+    // ------------------------------
+    // CHAINLINK CHECK
+    // ------------------------------
     function checkUpkeep(
         bytes calldata
     ) external view override returns (bool upkeepNeeded, bytes memory) {
         upkeepNeeded =
             plan.isActive &&
-            address(this).balance >= plan.emiAmount &&
+            senderDeposits[plan.sender] >= plan.emiAmount &&
             block.timestamp >= plan.nextPaymentTime;
-
-        return (upkeepNeeded, "");
     }
 
-    // --------------------------------------
-    // CHAINLINK AUTOMATION - PERFORMUPKEEP
-    // --------------------------------------
+    // ------------------------------
+    // CHAINLINK PERFORM
+    // ------------------------------
     function performUpkeep(bytes calldata) external override nonReentrant {
         if (
             plan.isActive &&
-            address(this).balance >= plan.emiAmount &&
+            senderDeposits[plan.sender] >= plan.emiAmount &&
             block.timestamp >= plan.nextPaymentTime
         ) {
+            senderDeposits[plan.sender] -= plan.emiAmount;
             payable(plan.receiver).transfer(plan.emiAmount);
+
             plan.amountPaid += plan.emiAmount;
 
             if (plan.amountPaid >= plan.totalAmount) {
@@ -147,22 +119,11 @@ contract EmiAutoPay is AutomationCompatibleInterface, ReentrancyGuard, Ownable {
             }
 
             plan.nextPaymentTime = block.timestamp + plan.interval;
+
             emit EmiPaid(plan.receiver, plan.emiAmount, plan.nextPaymentTime);
         }
     }
 
-    // --------------------------------------
-    // EMERGENCY WITHDRAW (Owner Only)
-    // --------------------------------------
-    function emergencyWithdraw(uint256 amount) external onlyOwner {
-        require(amount <= address(this).balance, "Insufficient balance");
-        payable(owner()).transfer(amount);
-        emit EmergencyWithdraw(owner(), amount);
-    }
-
-    // --------------------------------------
-    // PUBLIC VIEW FUNCTIONS
-    // --------------------------------------
     function getContractBalance() external view returns (uint256) {
         return address(this).balance;
     }
