@@ -26,6 +26,11 @@
     <div id="createPlan">
         <h2>Create EMI Plan</h2>
         <!-- <input id="sender" placeholder="Sender Address"> -->
+
+        <!-- <input id="receiverAddress" placeholder="Receiver Address (ETH)" type="text"> -->
+
+
+
         <input id="emiAmount" placeholder="EMI Amount (ETH)">
         <select id="intervalSelect">
             <option value="3600">1 Hour</option>
@@ -41,6 +46,7 @@
 
         <input id="customInterval" placeholder="Enter custom minutes" style="display:none">
         <input id="totalAmount" placeholder="Total Amount (ETH)">
+        <input id="networkName" placeholder="Connected Network" type="text" disabled>
         <button id="createPlanBtn">Create EMI Plan</button>
 
         <h3>QR Code for Sender</h3>
@@ -79,6 +85,11 @@
         <p><b>Sender Network:</b> <span id="planSenderNetwork"></span></p>
         <p><b>Status:</b> <span id="planStatus"></span></p>
     </div>
+
+    <button onclick="window.location.href='wallets.html'">
+        Connected Wallets
+    </button>
+
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <!-- WalletConnect Provider -->
